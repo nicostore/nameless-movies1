@@ -140,7 +140,16 @@ export default function DetailPage() {
 
       {/* PLAYER UTAMA */}
       <div className="player-wrapper">
-        <iframe src={activeUrl} className="player-frame" allowFullScreen />
+        <iframe 
+  src={activeUrl} 
+  className="player-frame"
+  allowFullScreen={true} // Wajib untuk React/Next.js
+  allow="autoplay; encrypted-media; fullscreen; picture-in-picture" // Izin lengkap
+  frameBorder="0"
+  width="100%"
+  height="100%"
+  referrerPolicy="origin" // Opsional: Membantu agar API mengenali request
+/>
         
         <div className="controls-bar">
           <div className="movie-title-info">
