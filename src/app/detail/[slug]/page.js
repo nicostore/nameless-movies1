@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import './detail.css'; // Impor file CSS terpisah
 
 export default function DetailPage() {
   const params = useParams();
@@ -66,60 +67,41 @@ export default function DetailPage() {
     }
   };
 
+  // Efek untuk mengelola class pada body untuk Cinema Mode
   useEffect(() => {
     const handleChange = () => { if (!document.fullscreenElement) setIsCinema(false); };
     document.addEventListener('fullscreenchange', handleChange);
-    return () => document.removeEventListener('fullscreenchange', handleChange);
-  }, []);
+
+    if (isCinema) {
+      document.body.classList.add('cinema-active');
+    } else {
+      document.body.classList.remove('cinema-active');
+    }
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleChange);
+      document.body.classList.remove('cinema-active'); // Cleanup saat komponen unmount
+    };
+  }, [isCinema]);
 
   if (loading) return <div className="loading-screen">Memuat Film...</div>;
   if (!data) return <div className="loading-screen">Film tidak ditemukan :(</div>;
 
   return (
     <div className={`detail-page ${isCinema ? 'mode-bioskop' : ''}`}>
-      <style jsx global>{`
-        body { background: #141414; color: white; margin: 0; overflow-x: hidden; }
-        .detail-page { min-height: 100vh; padding-top: 80px; transition: 0.3s; }
-        
-        .mode-bioskop { padding-top: 0 !important; overflow: hidden; }
-        .mode-bioskop .player-wrapper {
-          position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important;
-          max-width: none !important; margin: 0 !important; z-index: 99999; background: black;
-        }
-        .mode-bioskop .iframe-container { height: 100% !important; padding-bottom: 0 !important; }
-        .mode-bioskop ~ nav, body:has(.mode-bioskop) nav { display: none !important; }
-
-        .player-wrapper { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; background: black; border-radius: 8px; overflow: hidden; }
-        .iframe-container { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; }
-        .player-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-        
-        .controls-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1f1f1f; }
-        .movie-title { font-size: 18px; font-weight: bold; margin: 0; }
-        .btn-cinema { background: #E50914; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        
-        .content-area { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
-        @media (max-width: 768px) { .content-area { grid-template-columns: 1fr; } }
-        
-        .section-title { font-size: 18px; font-weight: bold; border-left: 4px solid #E50914; padding-left: 10px; margin-bottom: 15px; }
-        .synopsis { color: #ccc; line-height: 1.6; margin-bottom: 20px; }
-        .tag { background: #333; padding: 4px 10px; border-radius: 15px; font-size: 12px; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
-        
-        .episode-box { background: #1f1f1f; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; }
-        .episode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 8px; }
-        .btn-eps { background: #333; color: #ccc; border: none; padding: 10px; border-radius: 4px; cursor: pointer; }
-        .btn-eps.active { background: #E50914; color: white; }
-        
-        .loading-screen { display: flex; height: 100vh; align-items: center; justify-content: center; font-size: 20px; }
-      `}</style>
-
       <div className="player-wrapper" ref={playerContainerRef}>
         <div className="iframe-container">
           <iframe 
-            src={activeUrl}
-            className="player-frame"
-            allowFullScreen={true}
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            src={activeUrl} // Gunakan activeUrl sebagai sumber video
+            className="player-frame" // Terapkan styling untuk iframe
+            allowFullScreen={true} // Izinkan mode layar penuh
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture" // Izin untuk iframe
           />
+          {!activeUrl && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black text-white text-lg">
+              Video tidak tersedia.
+            </div>
+          )}
         </div>
         <div className="controls-bar">
           <div>
@@ -150,8 +132,10 @@ export default function DetailPage() {
             {data.cast && (
               <>
                 <h3 className="section-title">Pemeran</h3>
-                <p style={{color:'#aaa', fontSize:'14px'}}>
-                  {Array.isArray(data.cast) ? data.cast.join(', ') : data.cast}
+                <p style={{ color: '#aaa', fontSize: '14px' }}>
+                  {Array.isArray(data.cast)
+                    ? data.cast.map(actor => (typeof actor === 'object' && actor !== null ? actor.name : actor)).filter(Boolean).join(', ')
+                    : data.cast}
                 </p>
               </>
             )}
